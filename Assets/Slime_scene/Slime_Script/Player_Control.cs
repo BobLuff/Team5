@@ -112,13 +112,13 @@ public class Player_Control : MonoBehaviour {
             if (Physics2D.Raycast(transform.position, Vector2.down, 2f, LayerMask.GetMask("ground")))
             {
                 transform.GetComponent<Rigidbody2D>().AddForce(Vector3.up * jumpForce, ForceMode2D.Impulse);
-                //Debug.Log("IsGround");
+                Debug.Log("IsGround");
             }
 
             if (Physics2D.Raycast(transform.position, Vector2.up, 2f, LayerMask.GetMask("ceiling")))
             {
                 transform.GetComponent<Rigidbody2D>().AddForce(Vector3.down * jumpForce, ForceMode2D.Impulse);
-               // Debug.Log("IsCeiling");
+                Debug.Log("IsCeiling");
             }
 
         }
