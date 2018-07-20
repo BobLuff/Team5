@@ -28,7 +28,7 @@ public class Slem_red : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-       if (collision.gameObject.CompareTag ("enemy")) {
+       if (collision.gameObject.CompareTag ("Enemy")) {
 			GemCollected ();
 		}
         else

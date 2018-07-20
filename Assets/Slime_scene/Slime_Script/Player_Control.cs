@@ -109,7 +109,7 @@ public class Player_Control : MonoBehaviour {
         #region player进行跳跃，对地面和天花板进行的判断
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            if (Physics2D.Raycast(transform.position, Vector2.down, 2f, LayerMask.GetMask("ground")))
+            if (Physics2D.Raycast(transform.position, Vector2.down, 2f, LayerMask.GetMask("Platform")))
             {
                 transform.GetComponent<Rigidbody2D>().AddForce(Vector3.up * jumpForce, ForceMode2D.Impulse);
                 Debug.Log("IsGround");
@@ -140,10 +140,12 @@ public class Player_Control : MonoBehaviour {
         if (hor>0&&!facingRight) {
        
             Flip();
+            print(1);
         }
         if (hor < 0&&facingRight)
         {
             Flip();
+            print(2);
  
         }
         #endregion

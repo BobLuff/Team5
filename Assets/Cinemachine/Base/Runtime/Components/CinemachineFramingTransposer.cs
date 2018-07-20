@@ -292,9 +292,17 @@ namespace Cinemachine
         Vector3 m_PreviousCameraPosition = Vector3.zero;
         PositionPredictor m_Predictor = new PositionPredictor();
 
-        /// <summary>Internal API for inspector</summary>
-        public Vector3 TrackedPoint { get; private set; }
+        Vector3 GetTrackedPoint(Vector3 lookAt)
+        {
+            Vector3 pos = lookAt;
+            m_Predictor.Smoothing = m_LookaheadSmoothing;
+            m_Predictor.AddPosition(pos);
+            if (m_LookaheadTime > 0)
+                pos = m_Predictor.PredictPosition(m_LookaheadTime);
 
+            return pos;
+        }
+                
         /// <summary>Positions the virtual camera according to the transposer rules.</summary>
         /// <param name="curState">The current camera state</param>
         /// <param name="deltaTime">Used for damping.  If less than 0, no damping is done.</param>
@@ -311,17 +319,13 @@ namespace Cinemachine
 
             //UnityEngine.Profiling.Profiler.BeginSample("CinemachineFramingTransposer.MutateCameraState");
             Vector3 camPosWorld = m_PreviousCameraPosition;
-            curState.ReferenceLookAt = FollowTarget.position;
-            m_Predictor.Smoothing = m_LookaheadSmoothing;
-            m_Predictor.AddPosition(curState.ReferenceLookAt);
-            TrackedPoint = (m_LookaheadTime > 0) 
-                ? m_Predictor.PredictPosition(m_LookaheadTime) : curState.ReferenceLookAt;
+            curState.ReferenceLookAt = GetTrackedPoint(FollowTarget.position);
 
             // Work in camera-local space
             Quaternion localToWorld = curState.RawOrientation;
             Quaternion worldToLocal = Quaternion.Inverse(localToWorld);
             Vector3 cameraPos = worldToLocal * camPosWorld;
-            Vector3 targetPos = (worldToLocal * TrackedPoint) - cameraPos;
+            Vector3 targetPos = (worldToLocal * curState.ReferenceLookAt) - cameraPos;
 
             // Move along camera z
             Vector3 cameraOffset = Vector3.zero;

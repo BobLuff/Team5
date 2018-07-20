@@ -121,17 +121,11 @@ namespace Cinemachine
 
         /// <summary>Notification that this virtual camera is going live.
         /// <param name="fromCam">The camera being deactivated.  May be null.</param>
-        /// <param name="worldUp">Default world Up, set by the CinemachineBrain</param>
-        /// <param name="deltaTime">Delta time for time-based effects (ignore if less than or equal to 0)</param>
-        public override void OnTransitionFromCamera(
-            ICinemachineCamera fromCam, Vector3 worldUp, float deltaTime) 
+        public override void OnTransitionFromCamera(ICinemachineCamera fromCam) 
         {
-            base.OnTransitionFromCamera(fromCam, worldUp, deltaTime);
+            base.OnTransitionFromCamera(fromCam);
             mActivationTime = Time.time;
-            mCurrentInstruction = -1;
-            LiveChild = null;
-            mActiveBlend = null;
-            UpdateCameraState(worldUp, deltaTime);
+            mCurrentInstruction = 0;
         }
 
         /// <summary>Called by CinemachineCore at designated update time
@@ -146,12 +140,7 @@ namespace Cinemachine
                 deltaTime = -1;
 
             UpdateListOfChildren();
-
-            AdvanceCurrentInstruction();
-            CinemachineVirtualCameraBase best = null;
-            if (mCurrentInstruction >= 0 && mCurrentInstruction < m_Instructions.Length)
-                best = m_Instructions[mCurrentInstruction].m_VirtualCamera;
-
+            CinemachineVirtualCameraBase best = ChooseCurrentCamera(deltaTime);
             if (m_ChildCameras != null)
             {
                 for (int i = 0; i < m_ChildCameras.Length; ++i)
@@ -170,30 +159,27 @@ namespace Cinemachine
                 }
             }
 
-            if (best != null)
+            ICinemachineCamera previousCam = LiveChild;
+            LiveChild = best;
+
+            // Are we transitioning cameras?
+            if (previousCam != null && LiveChild != null && previousCam != LiveChild && mCurrentInstruction > 0)
             {
-                ICinemachineCamera previousCam = LiveChild;
-                LiveChild = best;
+                // Create a blend (will be null if a cut)
+                mActiveBlend = CreateBlend(
+                        previousCam, LiveChild,
+                        m_Instructions[mCurrentInstruction].m_Blend.BlendCurve, 
+                        m_Instructions[mCurrentInstruction].m_Blend.m_Time, mActiveBlend, deltaTime);
 
-                // Are we transitioning cameras?
-                if (previousCam != null && LiveChild != null && previousCam != LiveChild && mCurrentInstruction > 0)
-                {
-                    // Create a blend (will be null if a cut)
-                    mActiveBlend = CreateBlend(
-                            previousCam, LiveChild,
-                            m_Instructions[mCurrentInstruction].m_Blend.BlendCurve, 
-                            m_Instructions[mCurrentInstruction].m_Blend.m_Time, mActiveBlend, deltaTime);
+                // Notify incoming camera of transition
+                LiveChild.OnTransitionFromCamera(previousCam);
 
-                    // Notify incoming camera of transition
-                    LiveChild.OnTransitionFromCamera(previousCam, worldUp, deltaTime);
+                // Generate Camera Activation event if live
+                CinemachineCore.Instance.GenerateCameraActivationEvent(LiveChild);
 
-                    // Generate Camera Activation event if live
-                    CinemachineCore.Instance.GenerateCameraActivationEvent(LiveChild);
-
-                    // If cutting, generate a camera cut event if live
-                    if (mActiveBlend == null)
-                        CinemachineCore.Instance.GenerateCameraCutEvent(LiveChild);
-                }
+                // If cutting, generate a camera cut event if live
+                if (mActiveBlend == null)
+                    CinemachineCore.Instance.GenerateCameraCutEvent(LiveChild);
             }
 
             // Advance the current blend (if any)
@@ -290,35 +276,35 @@ namespace Cinemachine
             mActiveBlend = null;
         }
 
-        private void AdvanceCurrentInstruction()
+        private CinemachineVirtualCameraBase ChooseCurrentCamera(float deltaTime)
         {
-            //UnityEngine.Profiling.Profiler.BeginSample("CinemachineBlendListCamera.AdvanceCurrentInstruction");
+            //UnityEngine.Profiling.Profiler.BeginSample("CinemachineBlendListCamera.ChooseCurrentCamera");
             if (m_ChildCameras == null || m_ChildCameras.Length == 0 
                 || mActivationTime < 0 || m_Instructions.Length == 0)
             {
                 mActivationTime = -1;
-                mCurrentInstruction = -1;
-                mActiveBlend = null;
+                mCurrentInstruction = 0;
+                //UnityEngine.Profiling.Profiler.EndSample();
+                return null;
             }
-            else if (mCurrentInstruction >= m_Instructions.Length - 1)
+            float now = Time.time;
+            float cumulTime = 0;
+            for (int i = mCurrentInstruction; i < m_Instructions.Length; ++i)
             {
-                mCurrentInstruction = m_Instructions.Length - 1;
-            }
-            else 
-            {
-                float now = Time.time;
-                if (mCurrentInstruction < 0)
+                cumulTime += Mathf.Max(0, m_Instructions[i].m_Hold);
+                if (now - mActivationTime < cumulTime || i == m_Instructions.Length - 1)
                 {
-                    mActivationTime = now;
-                    mCurrentInstruction = 0;
-                }
-                else if (now - mActivationTime > Mathf.Max(0, m_Instructions[mCurrentInstruction].m_Hold))
-                {
-                    mActivationTime = now;
-                    ++mCurrentInstruction;
+                    if (mCurrentInstruction != i)
+                    {
+                        mActivationTime = now;
+                        mCurrentInstruction = i;
+                    }
+                    break;
                 }
             }
             //UnityEngine.Profiling.Profiler.EndSample();
+            mCurrentInstruction = Mathf.Min(mCurrentInstruction, m_Instructions.Length-1);
+            return m_Instructions[mCurrentInstruction].m_VirtualCamera;
         }
 
         private CinemachineBlend CreateBlend(

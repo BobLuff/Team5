@@ -33,6 +33,7 @@ public class TrackGraphic : MonoBehaviour {
         // mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         if(Input.GetMouseButton(1))
         {
+           // Debug.Log("startDraw");
             mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             TrajectoryLineRenderer.enabled = true;
      
@@ -40,8 +41,9 @@ public class TrackGraphic : MonoBehaviour {
        
             if (m_playerControl.facingRight)
             {
+                Debug.Log("m_playerControl.facingRight"+ m_playerControl.facingRight);
                
-                if (Vector2.Angle(Vector2.right,mousePos)>=90)
+                if (Vector2.Angle(transform.right,mousePos)>=90)
                 {
                     m_playerControl.Flip();
                 }
@@ -50,7 +52,8 @@ public class TrackGraphic : MonoBehaviour {
             }
             else
             {
-                if(Vector2.Angle(Vector2.right,mousePos)<90)
+                Debug.Log("m_playerControl.facingRight"+ m_playerControl.facingRight);
+                if (Vector2.Angle(transform.right,mousePos)<90)
                 {
                     m_playerControl.Flip();
                 }

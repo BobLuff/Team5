@@ -3,7 +3,7 @@ using UnityEditor;
 
 namespace Cinemachine.Editor
 {
-    [CustomPropertyDrawer(typeof(TagFieldAttribute))]
+   // [CustomPropertyDrawer(typeof(TagFieldAttribute))]
     public sealed  class CinemachineTagFieldPropertyDrawer : PropertyDrawer
     {
         public override void OnGUI(Rect rect, SerializedProperty property, GUIContent label)
