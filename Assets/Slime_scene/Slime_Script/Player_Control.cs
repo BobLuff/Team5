@@ -27,7 +27,7 @@ public class Player_Control : MonoBehaviour {
 
     private Rigidbody2D rig_player;//获取自身刚体
  
-    bool isGround;//判断是否在地面
+   // bool isGround;//判断是否在地面
 
     [Header("史莱姆的预制体")]
     [Header("0-Red；1-Yellow；2-Blue")]
@@ -49,6 +49,7 @@ public class Player_Control : MonoBehaviour {
   //  public bool Having_Slime_Blue = true;
     public bool Having_Slime_Yellow = true;
     public bool Having_Slime_Red = true;
+    private bool IsGround = false;
 
     public MySlime MySlime1
     {
@@ -90,6 +91,30 @@ public class Player_Control : MonoBehaviour {
 
 
 
+    private void Update()
+    {
+
+        #region player进行跳跃，对地面和天花板进行的判断
+        // Physics2D.Linecast(transform.position, groundCheck.position, 1 << LayerMask.NameToLayer("Ground"));
+        IsGround = Physics2D.Raycast(transform.position, Vector2.down, 1f, 1 << LayerMask.NameToLayer("Platfor"));
+        if (Input.GetKeyDown(KeyCode.Space) && IsGround)
+        {
+            Debug.Log("Jump");
+
+            transform.GetComponent<Rigidbody2D>().AddForce(Vector3.up * jumpForce, ForceMode2D.Impulse);
+
+
+            /*
+            if (Physics2D.Raycast(transform.position, Vector2.up, 2f, LayerMask.GetMask("ceiling")))
+            {
+                transform.GetComponent<Rigidbody2D>().AddForce(Vector3.down * jumpForce, ForceMode2D.Impulse);
+                Debug.Log("IsCeiling");
+            }
+            */
+
+        }
+        #endregion
+    }
     private void FixedUpdate()
     {
         #region 选择不同的史莱姆
@@ -102,27 +127,12 @@ public class Player_Control : MonoBehaviour {
         {
             MySlime1 = MySlime.Slime_Yellow;
         }
-    
+
 
         #endregion
 
-        #region player进行跳跃，对地面和天花板进行的判断
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            if (Physics2D.Raycast(transform.position, Vector2.down, 2f, LayerMask.GetMask("Platform")))
-            {
-                transform.GetComponent<Rigidbody2D>().AddForce(Vector3.up * jumpForce, ForceMode2D.Impulse);
-                Debug.Log("IsGround");
-            }
 
-            if (Physics2D.Raycast(transform.position, Vector2.up, 2f, LayerMask.GetMask("ceiling")))
-            {
-                transform.GetComponent<Rigidbody2D>().AddForce(Vector3.down * jumpForce, ForceMode2D.Impulse);
-                Debug.Log("IsCeiling");
-            }
 
-        }
-        #endregion
 
 
         float hor = Input.GetAxis("Horizontal");//行走
